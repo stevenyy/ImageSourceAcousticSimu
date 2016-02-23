@@ -179,7 +179,7 @@ function addImageSourcesFunctions(scene) {
                         vec3.subtract(temp, vtx0, source.pos);
                         var t = vec3.dot(temp, normal)/vec3.dot(normal, normal);
                         var P = vec3.create();
-                        vec3.scaleAndAdd(P, source.pos, normal, 2*t); //what if image on a face? i.e. t==0
+                        vec3.scaleAndAdd(P, source.pos, normal, 2*t); //what if image on a face, i.e. t==0?
                         image = {pos:P};
                         image.order = n;
                         image.rcoeff = source.rcoeff * f.rcoeff;
@@ -248,7 +248,7 @@ function addImageSourcesFunctions(scene) {
             for (var g = 0; g < order; g++) {
                 var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
                 if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
-                    // continue if P on the line of an edge, i.e. when intxn.tmin == 1
+                    // continue if image on its genFace, i.e. when tmin == 1
                     continue loop;
                 }
                 base = intxn.PMin;
@@ -258,7 +258,8 @@ function addImageSourcesFunctions(scene) {
                 vec3.subtract(ray, src.pos, base);
             }
             intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
-            if (intxn === null || intxn.tmin > 1) { //what if source on a face?
+            if (intxn === null || intxn.tmin > 1) {
+                // continue if source on a face, i.e. when tmin == 1
                 path.push(src);
                 scene.paths.push(path);
             }
