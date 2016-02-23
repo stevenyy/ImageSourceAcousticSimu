@@ -15,25 +15,60 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     
     //Step 1: Make a new array of vec3s which holds "vertices" transformed 
     //to world coordinates (hint: vec3 has a function "transformMat4" which is useful)
-
+    var transformed = [];
+    for (var f = 0; f < vertices.length; f++) {
+        var vtxnew = vec3.create();
+        vec3.transformMat4(vtxnew, vertices[f], mvMatrix);
+        transformed.push(vtxnew);
+    }
     
     //Step 2: Compute the plane normal of the plane spanned by the transformed vertices
+    var edge01 = vec3.create();
+    var edge12 = vec3.create();
+    var normal = vec3.create();
+    vec3.subtract(edge01, transformed[1], transformed[0]);
+    vec3.subtract(edge12, transformed[2], transformed[1]);
+    vec3.cross(normal, edge01, edge12);
     
     //Step 3: Perform ray intersect plane
-    
+    var temp = vec3.create();
+    vec3.subtract(temp, transformed[0], P0);
+    var t = vec3.dot(temp, normal)/vec3.dot(V, normal);
+    if (vec3.dot(V, normal)==0 || t <= 0) {
+        // no intersection if P0 on the face of vertices, i.e. when t==0
+        return null;
+    }
+    var P = vec3.create();
+    vec3.scaleAndAdd(P, P0, V, t);
     
     //Step 4: Check to see if the intersection point is inside of the transformed polygon
     //You can assume that the polygon is convex.  If you use the area test, you can
     //allow for some wiggle room in the two areas you're comparing (e.g. absolute difference
     //not exceeding 1e-4)
-    
+    var ref = crossProduct(transformed[transformed.length-1], transformed[0], P);
+    for (var i = 0; i < transformed.length-1; i++) {
+        if (vec3.dot(ref, crossProduct(transformed[i], transformed[i+1], P)) <= 0) {
+            // no intersection if P on the line of an edge, i.e. when crossProduct==0
+            return null;
+        }
+    } 
     
     //Step 5: Return the intersection point if it exists or null if it's outside
     //of the polygon or if the ray is perpendicular to the plane normal (no intersection)
-    
-    return {t:1e9, P:vec3.fromValues(0, 0, 0)}; //These are dummy values, but you should return 
+    return {t:t, P:P}; //These are dummy values, but you should return 
     //both an intersection point and a parameter t.  The parameter t will be used to sort
     //intersections in order of occurrence to figure out which one happened first
+}
+
+    //Helper funtion to find the cross product of two vec3's AB and AC
+function crossProduct(A, B, C) {
+    var ab = vec3.create();
+    var ac = vec3.create();
+    var crs = vec3.create();
+    vec3.subtract(ab, B, A);
+    vec3.subtract(ac, C, A);
+    vec3.cross(crs, ab, ac);
+    return crs;
 }
 
 
@@ -125,8 +160,57 @@ function addImageSourcesFunctions(scene) {
         //in world coordinates, not the faces in the original mesh coordinates
         //See the "rayIntersectFaces" function above for an example of how to loop
         //through faces in a mesh
-        
-    }    
+        var faces = [];
+        getFaces(faces, scene, mat4.create());
+        for (var n = 1; n <= order; n++) {
+            var len = scene.imsources.length;
+            for (var k = 0; k < len; k++) {
+                var source = scene.imsources[k];
+                for (var i = 0; i < faces.length; i++) {
+                    var f = faces[i];
+                    if (f.face != source.genFace) {
+                        var normal = f.face.getNormal();
+                        var trans = mat3.create();
+                        mat3.normalFromMat4(trans, f.matrix);
+                        vec3.transformMat3(normal, normal, trans);
+                        var vtx0 = vec3.create();
+                        vec3.transformMat4(vtx0, f.face.getVerticesPos()[0], f.matrix);
+                        var temp = vec3.create();
+                        vec3.subtract(temp, vtx0, source.pos);
+                        var t = vec3.dot(temp, normal)/vec3.dot(normal, normal);
+                        var P = vec3.create();
+                        vec3.scaleAndAdd(P, source.pos, normal, 2*t); //what if image on a face? i.e. t==0
+                        image = {pos:P};
+                        image.order = n;
+                        image.rcoeff = source.rcoeff * f.rcoeff;
+                        image.parent = source;
+                        image.genFace = f.face;
+                        scene.imsources.push(image);
+                    }
+                }
+            }
+        }    
+    }
+
+    function getFaces(faces, node, mvMatrix) {
+        if (node === null) {
+            return;
+        }
+        if ('mesh' in node) {
+            var mesh = node.mesh;
+            for (var f = 0; f < mesh.faces.length; f++) {
+                faces.push({face:mesh.faces[f], rcoeff:node.rcoeff, matrix:mvMatrix});
+            }
+        }
+        if ('children' in node) {
+            for (var i = 0; i < node.children.length; i++) {
+                var nextmvMatrix = mat4.create();
+                mat4.mul(nextmvMatrix, mvMatrix, node.children[i].transform);
+                getFaces(faces, node.children[i], nextmvMatrix);
+            }
+        }
+    }
+
     
     //Purpose: Based on the extracted image sources, trace back paths from the
     //receiver to the source, checking to make sure there are no occlusions
@@ -152,6 +236,33 @@ function addImageSourcesFunctions(scene) {
         //(or vice versa), so scene.receiver should be the first element 
         //and scene.source should be the last element of every array in 
         //scene.paths
+        loop:
+        for (var f = 0; f < scene.imsources.length; f++) {
+            var path = [scene.receiver];
+            var src = scene.imsources[f];
+            var order = src.order;
+            var base = scene.receiver.pos;
+            var ray = vec3.create();
+            vec3.subtract(ray, src.pos, base);
+            var excludeFace = null;
+            for (var g = 0; g < order; g++) {
+                var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
+                if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
+                    // continue if P on the line of an edge, i.e. when intxn.tmin == 1
+                    continue loop;
+                }
+                base = intxn.PMin;
+                path.push({pos:base, rcoeff:src.rcoeff});
+                excludeFace = src.genFace;
+                src = src.parent;
+                vec3.subtract(ray, src.pos, base);
+            }
+            intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
+            if (intxn === null || intxn.tmin > 1) { //what if source on a face?
+                path.push(src);
+                scene.paths.push(path);
+            }
+        }
     }
     
     
