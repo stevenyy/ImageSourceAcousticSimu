@@ -35,6 +35,7 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     vec3.subtract(temp, transformed[0], P0);
     var t = vec3.dot(temp, normal)/vec3.dot(V, normal);
     if (vec3.dot(V, normal)==0 || t <= 0) {
+        // no intersection if P0 on the face of vertices, i.e. when t==0
         return null;
     }
     var P = vec3.create();
@@ -46,7 +47,8 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     //not exceeding 1e-4)
     var ref = crossProduct(transformed[transformed.length-1], transformed[0], P);
     for (var i = 0; i < transformed.length-1; i++) {
-        if (vec3.dot(ref, crossProduct(transformed[i], transformed[i+1], P)) < 0) {
+        if (vec3.dot(ref, crossProduct(transformed[i], transformed[i+1], P)) <= 0) {
+            // no intersection if P on the line of an edge, i.e. when crossProduct==0
             return null;
         }
     } 
@@ -177,7 +179,7 @@ function addImageSourcesFunctions(scene) {
                         vec3.subtract(temp, vtx0, source.pos);
                         var t = vec3.dot(temp, normal)/vec3.dot(normal, normal);
                         var P = vec3.create();
-                        vec3.scaleAndAdd(P, source.pos, normal, 2*t); //what if image on a face?
+                        vec3.scaleAndAdd(P, source.pos, normal, 2*t); //what if image on a face? i.e. t==0
                         image = {pos:P};
                         image.order = n;
                         image.rcoeff = source.rcoeff * f.rcoeff;
@@ -245,7 +247,8 @@ function addImageSourcesFunctions(scene) {
             var excludeFace = null;
             for (var g = 0; g < order; g++) {
                 var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
-                if (intxn === null || intxn.faceMin != src.genFace) {
+                if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
+                    // continue if P on the line of an edge, i.e. when intxn.tmin == 1
                     continue loop;
                 }
                 base = intxn.PMin;
