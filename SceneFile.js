@@ -92,6 +92,7 @@ function setupScene(scene, glcanvas) {
     
     //Add algorithm functions to this object
     addImageSourcesFunctions(scene);
+    scene.computeBBoxes();//// compute bounding box
     
     //Now that the scene has loaded, setup the glcanvas
     SceneCanvas(glcanvas, 'GLEAT/DrawingUtils', 800, 600, scene);
@@ -136,7 +137,7 @@ function drawBeacon(glcanvas, pMatrix, mvMatrix, camera, mesh, color) {
 
 //Update the beacon positions on the web site
 function vec3StrFixed(v, k) {
-    return "(" + v[0].toFixed(k) + ", " + v[1].toFixed(2) + ", " + v[2].toFixed(2) + ")";
+    return "(" + v[0].toFixed(k) + ", " + v[1].toFixed(k) + ", " + v[2].toFixed(k) + ")";
 }
 function updateBeaconsPos() {
     var sourcePosE = document.getElementById("sourcePos");
@@ -401,11 +402,15 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
         glcanvas.scene.extractPaths();
         //Fill in buffers for path drawer
         glcanvas.pathDrawer.reset();
+        //// glcanvas.drawer.setPointSize(10);
         for (var i = 0; i < glcanvas.scene.paths.length; i++) {
             var path = glcanvas.scene.paths[i];
             for (var j = 0; j < path.length-1; j++) {
                 //Draw all of the paths as a sequence of red line segments
                 glcanvas.pathDrawer.drawLine(path[j].pos, path[j+1].pos, vec3.fromValues(1, 0, 0));
+                //// Draw all intersection points found along each path as dots
+                if (j == 0) continue;
+                glcanvas.drawer.drawPoint(path[j].pos, vec3.fromValues(1, 1, 0));
             }
         }
         requestAnimFrame(glcanvas.repaint);

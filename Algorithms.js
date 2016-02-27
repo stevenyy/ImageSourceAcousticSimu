@@ -16,9 +16,9 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     //Step 1: Make a new array of vec3s which holds "vertices" transformed 
     //to world coordinates (hint: vec3 has a function "transformMat4" which is useful)
     var transformed = [];
-    for (var f = 0; f < vertices.length; f++) {
+    for (var v = 0; v < vertices.length; v++) {
         var vtxnew = vec3.create();
-        vec3.transformMat4(vtxnew, vertices[f], mvMatrix);
+        vec3.transformMat4(vtxnew, vertices[v], mvMatrix);
         transformed.push(vtxnew);
     }
     
@@ -35,7 +35,7 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     vec3.subtract(temp, transformed[0], P0);
     var t = vec3.dot(temp, normal)/vec3.dot(V, normal);
     if (vec3.dot(V, normal)==0 || t <= 0) {
-        // no intersection if P0 on the face of vertices, i.e. when t==0
+        //// no intersection if P0 on the face of vertices (t==0)
         return null;
     }
     var P = vec3.create();
@@ -48,7 +48,7 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     var ref = crossProduct(transformed[transformed.length-1], transformed[0], P);
     for (var i = 0; i < transformed.length-1; i++) {
         if (vec3.dot(ref, crossProduct(transformed[i], transformed[i+1], P)) <= 0) {
-            // no intersection if P on the line of an edge, i.e. when crossProduct==0
+            //// no intersection if P on the line of an edge (when crossProduct==0)
             return null;
         }
     } 
@@ -60,7 +60,7 @@ function rayIntersectPolygon(P0, V, vertices, mvMatrix) {
     //intersections in order of occurrence to figure out which one happened first
 }
 
-    //Helper funtion to find the cross product of two vec3's AB and AC
+//// Helper funtion to find the cross product of two vec3's AB and AC
 function crossProduct(A, B, C) {
     var ab = vec3.create();
     var ac = vec3.create();
@@ -70,6 +70,86 @@ function crossProduct(A, B, C) {
     vec3.cross(crs, ab, ac);
     return crs;
 }
+
+
+function computeBBoxes(node, mvMatrix) {
+    if (node === null) {
+        return;
+    }
+    var bbox = [];
+    bbox.xmin = Infinity;
+    bbox.ymin = Infinity;
+    bbox.zmin = Infinity;
+    bbox.xmax = -Infinity;
+    bbox.ymax = -Infinity;
+    bbox.zmax = -Infinity;
+
+    if ('mesh' in node) {
+        for (var f = 0; f < node.mesh.faces.length; f++) {
+            var vertices = node.mesh.faces[f].getVerticesPos();
+            for (var v = 0; v < vertices.length; v++) {
+                var vtx = vec3.create();
+                vec3.transformMat4(vtx, vertices[v], mvMatrix);
+                if (vtx[0] < bbox.xmin) bbox.xmin = vtx[0];
+                if (vtx[0] > bbox.xmax) bbox.xmax = vtx[0];
+                if (vtx[1] < bbox.ymin) bbox.ymin = vtx[1];
+                if (vtx[1] > bbox.ymax) bbox.ymax = vtx[1];
+                if (vtx[2] < bbox.zmin) bbox.zmin = vtx[2];
+                if (vtx[2] > bbox.zmax) bbox.zmax = vtx[2];
+            }
+        }
+    }
+
+    if ('children' in node) {
+        for (var i = 0; i < node.children.length; i++) {
+            var child = node.children[i];
+            var nextmvMatrix = mat4.create();
+            mat4.mul(nextmvMatrix, mvMatrix, child.transform);
+            computeBBoxes(child, nextmvMatrix);
+
+            if (child.bbox.xmin < bbox.xmin) bbox.xmin = child.bbox.xmin;
+            if (child.bbox.xmax > bbox.xmax) bbox.xmax = child.bbox.xmax;
+            if (child.bbox.ymin < bbox.ymin) bbox.ymin = child.bbox.ymin;
+            if (child.bbox.ymax > bbox.ymax) bbox.ymax = child.bbox.ymax;
+            if (child.bbox.zmin < bbox.zmin) bbox.zmin = child.bbox.zmin;
+            if (child.bbox.zmax > bbox.zmax) bbox.zmax = child.bbox.zmax;
+        }
+    }
+
+    //// make bounding box
+
+    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin),
+                vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax),
+                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax),
+                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin)]);
+
+    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin),
+                vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin)]);
+
+    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin),
+                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin),
+                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin),
+                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin)]);
+
+    bbox.push([ vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin),
+                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin)]);
+
+    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin),
+                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin)]);
+
+    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax),
+                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax),
+                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax)]);
+    node.bbox = bbox;
+}
+
 
 
 function addImageSourcesFunctions(scene) {
@@ -95,6 +175,19 @@ function addImageSourcesFunctions(scene) {
         if (node === null) {
             return null;
         }
+
+        //// check bounding box
+        var intxn = null;
+        for (var b = 0; b < node.bbox.length; b++) {
+            intxn = rayIntersectPolygon(P0, V, node.bbox[b], mat4.create());
+            if (!(intxn === null)) {
+                break;
+            }
+        }
+        if (intxn === null) {
+            return null;
+        }
+
         if ('mesh' in node) { //Make sure it's not just a dummy transformation node
             var mesh = node.mesh;
             for (var f = 0; f < mesh.faces.length; f++) {
@@ -133,6 +226,13 @@ function addImageSourcesFunctions(scene) {
         }
         return {tmin:tmin, PMin:PMin, faceMin:faceMin};
     }
+
+
+    scene.computeBBoxes = function() {
+        console.log("Computing bounding boxes");
+        computeBBoxes(scene, mat4.create());
+    }
+
     
     //Purpose: Fill in the array scene.imsources[] with a bunch of source
     //objects.  It's up to you what you put in the source objects, but at
@@ -160,6 +260,7 @@ function addImageSourcesFunctions(scene) {
         //in world coordinates, not the faces in the original mesh coordinates
         //See the "rayIntersectFaces" function above for an example of how to loop
         //through faces in a mesh
+        scene.computeBBoxes(scene, mat4.create());
         var faces = [];
         getFaces(faces, scene, mat4.create());
         for (var n = 1; n <= order; n++) {
@@ -179,7 +280,7 @@ function addImageSourcesFunctions(scene) {
                         vec3.subtract(temp, vtx0, source.pos);
                         var t = vec3.dot(temp, normal)/vec3.dot(normal, normal);
                         var P = vec3.create();
-                        vec3.scaleAndAdd(P, source.pos, normal, 2*t); //what if image on a face, i.e. t==0?
+                        vec3.scaleAndAdd(P, source.pos, normal, 2*t);//// what if image on a face (t==0)?
                         image = {pos:P};
                         image.order = n;
                         image.rcoeff = source.rcoeff * f.rcoeff;
@@ -237,9 +338,9 @@ function addImageSourcesFunctions(scene) {
         //and scene.source should be the last element of every array in 
         //scene.paths
         loop:
-        for (var f = 0; f < scene.imsources.length; f++) {
+        for (var i = 0; i < scene.imsources.length; i++) {
             var path = [scene.receiver];
-            var src = scene.imsources[f];
+            var src = scene.imsources[i];
             var order = src.order;
             var base = scene.receiver.pos;
             var ray = vec3.create();
@@ -248,7 +349,7 @@ function addImageSourcesFunctions(scene) {
             for (var g = 0; g < order; g++) {
                 var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
                 if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
-                    // continue if image on its genFace, i.e. when tmin == 1
+                    //// continue if image on its genFace (tmin == 1)
                     continue loop;
                 }
                 base = intxn.PMin;
@@ -259,7 +360,7 @@ function addImageSourcesFunctions(scene) {
             }
             intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
             if (intxn === null || intxn.tmin > 1) {
-                // continue if source on a face, i.e. when tmin == 1
+                //// continue if source on a face (tmin == 1)
                 path.push(src);
                 scene.paths.push(path);
             }
