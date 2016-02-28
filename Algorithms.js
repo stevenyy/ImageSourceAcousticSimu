@@ -117,36 +117,31 @@ function computeBBoxes(node, mvMatrix) {
     }
 
     //// make bounding box
+    var vtx000 = vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin);
+    var vtx001 = vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax);
+    var vtx010 = vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin);
+    var vtx011 = vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax);
+    var vtx100 = vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin);
+    var vtx101 = vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax);
+    var vtx110 = vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin);
+    var vtx111 = vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax);
 
-    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin),
-                vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax),
-                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax),
-                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin)]);
+    if (bbox.xmin == bbox.xmax) bbox.push([vtx000, vtx001, vtx011, vtx010]);
+    if (bbox.ymin == bbox.ymax) bbox.push([vtx000, vtx001, vtx101, vtx100]);
+    if (bbox.zmin == bbox.zmax) bbox.push([vtx000, vtx100, vtx110, vtx010]);
+    else {
+        bbox.push([vtx000, vtx001, vtx011, vtx010]);
+        bbox.push([vtx000, vtx001, vtx101, vtx100]);
+        bbox.push([vtx000, vtx100, vtx110, vtx010]);
+        bbox.push([vtx100, vtx101, vtx111, vtx110]);
+        bbox.push([vtx010, vtx011, vtx111, vtx110]);
+        bbox.push([vtx001, vtx101, vtx111, vtx011]);
+    }
 
-    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin),
-                vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin)]);
-
-    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmin),
-                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin),
-                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin),
-                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin)]);
-
-    bbox.push([ vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmin),
-                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin)]);
-
-    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmin),
-                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmin)]);
-
-    bbox.push([ vec3.fromValues(bbox.xmin, bbox.ymin, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymin, bbox.zmax),
-                vec3.fromValues(bbox.xmax, bbox.ymax, bbox.zmax),
-                vec3.fromValues(bbox.xmin, bbox.ymax, bbox.zmax)]);
+    bbox.lines = [  [vtx000,vtx001], [vtx000,vtx010], [vtx000,vtx100], 
+                    [vtx101,vtx001], [vtx101,vtx111], [vtx101,vtx100], 
+                    [vtx011,vtx001], [vtx011,vtx111], [vtx011,vtx010], 
+                    [vtx110,vtx111], [vtx110,vtx010], [vtx110,vtx100]];
     node.bbox = bbox;
 }
 

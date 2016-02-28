@@ -111,6 +111,19 @@ function loadSceneFromFile(filename, glcanvas) {
     });
 }
 
+////
+function repaintBBox(node) {
+    for (var i = 0; i < node.bbox.lines.length; i++) {
+        glcanvas.drawer.drawLine(node.bbox.lines[i][0], node.bbox.lines[i][1], vec3.fromValues(0, 1, 1));
+    }
+    if ('children' in node) {
+        for (var i = 0; i < node.children.length; i++) {
+            repaintBBox(node.children[i]);
+        }
+    }
+}
+
+
 //For debugging
 function outputSceneMeshes(node, levelStr) {
     console.log("*" + levelStr + node.mesh);
@@ -237,23 +250,25 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
         
         //Draw the image sources as magenta beacons
         if (glcanvas.drawImageSources) {
-            for (var i = 0; i < glcanvas.scene.imsources.length; i++) {
-                if (glcanvas.scene.imsources[i] == glcanvas.scene.source) {
-                    continue;
-                }
-                drawBeacon(glcanvas, pMatrix, mvMatrix, glcanvas.scene.imsources[i], glcanvas.beaconMesh, vec3.fromValues(1, 0, 1)); 
-            }
+            glcanvas.imSourcesDrawer.repaint(pMatrix, mvMatrix);////
+            // for (var i = 0; i < glcanvas.scene.imsources.length; i++) {
+            //     if (glcanvas.scene.imsources[i] == glcanvas.scene.source) {
+            //         continue;
+            //     }
+            //     drawBeacon(glcanvas, pMatrix, mvMatrix, glcanvas.scene.imsources[i], glcanvas.beaconMesh, vec3.fromValues(1, 0, 1)); 
+            // }
         }
         
         //Draw the paths
         if (glcanvas.drawPaths) {
             glcanvas.pathDrawer.repaint(pMatrix, mvMatrix);
+            glcanvas.drawer.repaint(pMatrix, mvMatrix);
         }
         
         //Draw lines and points for debugging
-        glcanvas.drawer.reset(); //Clear lines and points drawn last time
+        //// glcanvas.drawer.reset(); //Clear lines and points drawn last time
         //TODO: Paint debugging stuff here if you'd like
-        glcanvas.drawer.repaint(pMatrix, mvMatrix);
+        //// glcanvas.drawer.repaint(pMatrix, mvMatrix);
         
         //Redraw if walking
         if (glcanvas.movelr != 0 || glcanvas.moveud != 0 || glcanvas.movefb != 0) {
@@ -394,6 +409,12 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.computeImageSources = function(order) {
         console.log("Computing image sources of order " + order);
         glcanvas.scene.computeImageSources(order);
+        ////
+        glcanvas.imSourcesDrawer.reset();
+        for (var i = 1; i < glcanvas.scene.imsources.length; i++) {
+            glcanvas.imSourcesDrawer.drawPoint(glcanvas.scene.imsources[i].pos, vec3.fromValues(1, 0, 1));
+        }
+
         requestAnimFrame(glcanvas.repaint);
     }
     
@@ -402,6 +423,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
         glcanvas.scene.extractPaths();
         //Fill in buffers for path drawer
         glcanvas.pathDrawer.reset();
+        glcanvas.drawer.reset();
         //// glcanvas.drawer.setPointSize(10);
         for (var i = 0; i < glcanvas.scene.paths.length; i++) {
             var path = glcanvas.scene.paths[i];
@@ -413,6 +435,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
                 glcanvas.drawer.drawPoint(path[j].pos, vec3.fromValues(1, 1, 0));
             }
         }
+        repaintBBox(scene);////
         requestAnimFrame(glcanvas.repaint);
     }
 
@@ -480,6 +503,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.shaders = initShaders(glcanvas.gl, shadersRelPath);
     
     glcanvas.drawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);//Simple drawer object for debugging
+    glcanvas.imSourcesDrawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);////
     glcanvas.pathDrawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);//For drawing reflection paths
     
     glcanvas.gl.clearColor(0.0, 0.0, 0.0, 1.0);
