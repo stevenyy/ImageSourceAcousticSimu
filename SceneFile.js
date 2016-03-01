@@ -92,7 +92,6 @@ function setupScene(scene, glcanvas) {
     
     //Add algorithm functions to this object
     addImageSourcesFunctions(scene);
-    scene.computeBBoxes();//// compute bounding box
     
     //Now that the scene has loaded, setup the glcanvas
     SceneCanvas(glcanvas, 'GLEAT/DrawingUtils', 800, 600, scene);
@@ -251,13 +250,13 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
         
         //Draw the image sources as magenta beacons
         if (glcanvas.drawImageSources) {
-            glcanvas.imSourcesDrawer.repaint(pMatrix, mvMatrix);////
-            // for (var i = 0; i < glcanvas.scene.imsources.length; i++) {
-            //     if (glcanvas.scene.imsources[i] == glcanvas.scene.source) {
-            //         continue;
-            //     }
-            //     drawBeacon(glcanvas, pMatrix, mvMatrix, glcanvas.scene.imsources[i], glcanvas.beaconMesh, vec3.fromValues(1, 0, 1)); 
-            // }
+            //// glcanvas.imSourcesDrawer.repaint(pMatrix, mvMatrix); //// comment out the code below
+            for (var i = 0; i < glcanvas.scene.imsources.length; i++) {
+                if (glcanvas.scene.imsources[i] == glcanvas.scene.source) {
+                    continue;
+                }
+                drawBeacon(glcanvas, pMatrix, mvMatrix, glcanvas.scene.imsources[i], glcanvas.beaconMesh, vec3.fromValues(1, 0, 1)); 
+            }
         }
         
         //Draw the paths
@@ -431,7 +430,8 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
                 glcanvas.pathDrawer.drawLine(path[j].pos, path[j+1].pos, vec3.fromValues(1, 0, 0));
                 //// Draw all intersection points found along each path as dots
                 if (j == 0) continue;
-                glcanvas.drawer.drawPoint(path[j].pos, vec3.fromValues(1, 1, 0));
+                // glcanvas.drawer.drawPoint(path[j].pos, vec3.fromValues(1, 1, 0));
+                glcanvas.drawer.drawLine(path[j].pos, path[j].dir, vec3.fromValues(1, 1, 0));
             }
         }
         repaintBBox(scene);//// 

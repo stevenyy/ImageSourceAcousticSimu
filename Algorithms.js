@@ -222,12 +222,6 @@ function addImageSourcesFunctions(scene) {
         return {tmin:tmin, PMin:PMin, faceMin:faceMin};
     }
 
-
-    scene.computeBBoxes = function() {
-        console.log("Computing bounding boxes");
-        computeBBoxes(scene, mat4.create());
-    }
-
     
     //Purpose: Fill in the array scene.imsources[] with a bunch of source
     //objects.  It's up to you what you put in the source objects, but at
@@ -255,20 +249,22 @@ function addImageSourcesFunctions(scene) {
         //in world coordinates, not the faces in the original mesh coordinates
         //See the "rayIntersectFaces" function above for an example of how to loop
         //through faces in a mesh
-        scene.computeBBoxes(scene, mat4.create());
-        var faces = [];
-        getFaces(faces, scene, mat4.create());
+        if (!('polygons' in scene)) {
+            scene.polygons = [];
+            getFaces(scene.polygons, scene, mat4.create());
+        }
         for (var n = 1; n <= order; n++) {
             var len = scene.imsources.length;
             for (var k = 0; k < len; k++) {
                 var source = scene.imsources[k];
-                for (var i = 0; i < faces.length; i++) {
-                    var f = faces[i];
+                for (var i = 0; i < scene.polygons.length; i++) {
+                    var f = scene.polygons[i];
                     if (f.face != source.genFace) {
                         var normal = f.face.getNormal();
                         var trans = mat3.create();
                         mat3.normalFromMat4(trans, f.matrix);
                         vec3.transformMat3(normal, normal, trans);
+                        f.face.normal = normal;//// 
                         var vtx0 = vec3.create();
                         vec3.transformMat4(vtx0, f.face.getVerticesPos()[0], f.matrix);
                         var temp = vec3.create();
@@ -285,24 +281,24 @@ function addImageSourcesFunctions(scene) {
                     }
                 }
             }
-        }    
+        }
     }
 
-    function getFaces(faces, node, mvMatrix) {
+    function getFaces(polygons, node, mvMatrix) {
         if (node === null) {
             return;
         }
         if ('mesh' in node) {
             var mesh = node.mesh;
             for (var f = 0; f < mesh.faces.length; f++) {
-                faces.push({face:mesh.faces[f], rcoeff:node.rcoeff, matrix:mvMatrix});
+                polygons.push({face:mesh.faces[f], rcoeff:node.rcoeff, matrix:mvMatrix});
             }
         }
         if ('children' in node) {
             for (var i = 0; i < node.children.length; i++) {
                 var nextmvMatrix = mat4.create();
                 mat4.mul(nextmvMatrix, mvMatrix, node.children[i].transform);
-                getFaces(faces, node.children[i], nextmvMatrix);
+                getFaces(polygons, node.children[i], nextmvMatrix);
             }
         }
     }
@@ -323,6 +319,11 @@ function addImageSourcesFunctions(scene) {
     //part of the path, which will be used to compute decays in "computeInpulseResponse()"
     //Don't forget the direct path from source to receiver!
     scene.extractPaths = function() {
+        //// Log: strangely, I can't compute bboxes right after adding scene funcrions.
+        //// It turns out mesh.faces are empty after parseNode() and even after everything's set up.
+        if (!('bbox' in scene)) {
+            computeBBoxes(scene, mat4.create());
+        }
         scene.paths = [];
         
         //TODO: Finish this. Extract the rest of the paths by backtracing from
@@ -348,7 +349,16 @@ function addImageSourcesFunctions(scene) {
                     continue loop;
                 }
                 base = intxn.PMin;
-                path.push({pos:base, rcoeff:src.rcoeff});
+
+                //// debugging feature
+                var normal = vec3.clone(src.genFace.normal);
+                vec3.scale(normal, normal, vec3.dot(normal, ray));
+                vec3.normalize(normal, normal);
+                vec3.scale(normal, normal, 0.3);
+                var head = vec3.create();
+                vec3.subtract(head, base, normal);
+
+                path.push({pos:base, rcoeff:src.rcoeff, dir:head});
                 excludeFace = src.genFace;
                 src = src.parent;
                 vec3.subtract(ray, src.pos, base);
