@@ -52,6 +52,7 @@
 <tr><td>Display Mesh Edges</td><td><input type="checkbox" id="meshEdgesCheckbox" /></td></tr>
 <tr><td>Display Image Sources</td><td><input type="checkbox" id="displayImageSourcesCheckbox" /></td></tr>
 <tr><td>Display Paths</td><td><input type="checkbox" id="displayPathsCheckbox" /></td></tr>
+<tr><td>Display Debugging Features</td><td><input type="checkbox" id="displayDebuggingFeaturesCheckbox" /></td></tr>
 </table>
 
 <h3>Viewpoint</h3>
@@ -108,7 +109,7 @@
     var glcanvas = document.getElementById("GLCanvas1");
     glcanvas.addEventListener("contextmenu", function(e){ e.stopPropagation(); e.preventDefault(); return false; }); //Need this to disable the menu that pops up on right clicking
     loadSceneFromFile('SampleScene.scn', glcanvas);
-    
+
     var sceneInput = document.getElementById('sceneInput');
     sceneInput.addEventListener('change', function(e) {
         var reader = new FileReader();
@@ -125,27 +126,35 @@
         }
         reader.readAsText(sceneInput.files[0]);
     });
-    
+
     var meshEdgesCheckbox = document.getElementById('meshEdgesCheckbox');
     meshEdgesCheckbox.addEventListener('change', function(e) {
         glcanvas.drawEdges = meshEdgesCheckbox.checked;
         requestAnimFrame(glcanvas.repaint);
     });
     meshEdgesCheckbox.checked = true;
-    
+
     var displayImageSourcesCheckbox = document.getElementById('displayImageSourcesCheckbox');
     displayImageSourcesCheckbox.addEventListener('change', function(e) {
         glcanvas.drawImageSources = displayImageSourcesCheckbox.checked;
         requestAnimFrame(glcanvas.repaint);
     });
     displayImageSourcesCheckbox.checked = true;
+
     var displayPathsCheckbox = document.getElementById('displayPathsCheckbox');
     displayPathsCheckbox.addEventListener('change', function(e) {
         glcanvas.drawPaths = displayPathsCheckbox.checked;
         requestAnimFrame(glcanvas.repaint);
     });
     displayPathsCheckbox.checked = true;
-    
+
+    var displayDebuggingFeaturesCheckbox = document.getElementById('displayDebuggingFeaturesCheckbox');
+    displayDebuggingFeaturesCheckbox.addEventListener('change', function(e) {
+        glcanvas.drawDebuggingFeatures = displayDebuggingFeaturesCheckbox.checked;
+        requestAnimFrame(glcanvas.repaint);
+    });
+    displayDebuggingFeaturesCheckbox.checked = true;
+
     function callViewFromSource() {
         glcanvas.viewFromSource();
     }
@@ -178,15 +187,15 @@
     function playAudioSource() {
         playAudio(buffer);
     }
-    
+
     function playAudioImpulse() {
         playAudio(impbuffer);
     }
-    
+
     function playAudioConv() {
         playAudio(convbuffer);
     }
-    
+
     function playAudio(b) {
         if (context === null) {
             return;
@@ -202,12 +211,12 @@
         source.start();
         playing = true;
     }
-    
+
     function pauseAudio() {
         if (source === null) {
             return;
         }
-        playing = false;
+        var playing = false;
         source.stop();
     }
 
@@ -225,7 +234,7 @@
                     console.log(e);
                 });
             }
-        }        
+        }
         reader.readAsArrayBuffer(audioInput.files[0]);
     });
 
