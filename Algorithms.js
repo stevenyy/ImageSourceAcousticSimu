@@ -398,3 +398,32 @@ function addImageSourcesFunctions(scene) {
         //Save the result into the array scene.impulseResp[]
     }
 }
+
+function buildCity() {
+    var dimension = 1000;
+    var smin = 3; //streetWidthMin
+    var smax = 5; //streetWidthMax
+    var bmin = 20; //buildingSizeMin
+    var bmax = 50; //buildingSizeMax
+
+    var buildings = [];
+    var streets = [];
+
+    var x = dimension;
+    while (x >= bmax+bmin+smax) {
+        // var n = Math.floor((Math.random() * 3) + 3);
+        var b = Math.floor((Math.random() * (bmax-bmin+1)) + bmin);
+        var s = Math.floor((Math.random() * (smax-smin+1)) + smin);
+        buildings.push(b);
+        streets.push(s);
+        x -= b+s;
+    }
+    if (x < bmax) {
+        buildings.push(x);
+    }
+    else {
+        var b = Math.floor((Math.random() * (x-2*smin+1)) + smin);
+        streets.push(b);
+    }
+
+}
