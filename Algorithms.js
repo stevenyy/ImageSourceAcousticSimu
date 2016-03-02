@@ -418,19 +418,19 @@ function addImageSourcesFunctions(scene) {
                 atten *= path[j].rcoeff*attenuate(p,locDis);
             }
             var time = totalDis/SVel;
-            console.log("Time is: "+time);
+            // console.log("Time is: "+time);
             scene.impulses.push({time:time,atten:atten})
             if (time>time_max) time_max=time;
 
         }
-        console.log("maxtime is "+time_max);
-        scene.impulseResp=new Float32Array(Math.ceil(time_max*Fs));
-        console.log("Constructing impulseResp array... : "+scene.impulseResp.length);
+        // console.log("maxtime is "+time_max);
+        scene.impulseResp=new Float32Array(Math.ceil(time_max*Fs)); 
+        // console.log("Constructing impulseResp array... : "+scene.impulseResp.length);
         for (var i=0;i<scene.impulses.length;i++){
             var ind = findNear(scene.impulses[i].time*Fs);
             scene.impulseResp[ind] += scene.impulses[i].atten;    
         }
-        console.log("the size of array right after construction: "+scene.impulseResp.length);
+        // console.log("the size of array right after construction: "+scene.impulseResp.length);
     }
 
     //helper calculate attenuation
