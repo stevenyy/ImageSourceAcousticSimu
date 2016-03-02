@@ -433,10 +433,13 @@ function addImageSourcesFunctions(scene) {
             if (time>time_max) time_max=time;
 
         }
+        console.log("maxtime is "+time_max);
         scene.impulseResp=new Float32Array(time_max*Fs);
+        console.log("Constructing impulseResp array... : "+scene.impulseResp.length);
         for (var i=0;i<scene.impulses.length;i++){
             var ind = findNear(scene.impulses[i].time*Fs);
             scene.impulseResp[ind] += scene.impulses[i].atten;    
         }
+        console.log("the size of array right after construction: "+scene.impulseResp.length);
     }
 }
