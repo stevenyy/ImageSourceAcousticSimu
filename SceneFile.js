@@ -45,6 +45,23 @@ function parseNode(node) {
           }
         });        
     }
+
+    //// orginal meshes before simplified
+    if ('omesh' in node) {
+        var omeshname = node.omesh;
+        node.omesh = new PolyMesh();
+        d3.text(omeshname, function(error, data) {
+          console.log("For simplified meshes: loading original mesh " + omeshname);
+          if (error) throw error;
+          arrayOfLines = data.match(/[^\r\n]+/g);
+          node.omesh.loadFileFromLines(arrayOfLines);
+          if ('color' in node) {
+            for (var i = 0; i < node.omesh.vertices.length; i++) {
+                node.omesh.vertices[i].color = node.color;
+            }
+          }
+        });        
+    }
     
     if ('children' in node) {
         for (var i = 0; i < node.children.length; i++) {
@@ -210,9 +227,14 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.repaintRecurse = function(node, pMatrix, matrixIn) {
         var mvMatrix = mat4.create();
         mat4.mul(mvMatrix, matrixIn, node.transform);
-        if ('mesh' in node) {
+        //// render original meshes instead of simplified ones
+        if ('omesh' in node) {
+            node.omesh.render(glcanvas.gl, glcanvas.shaders, pMatrix, mvMatrix, glcanvas.ambientColor, glcanvas.light1Pos, glcanvas.light2Pos, glcanvas.lightColor, false, glcanvas.drawEdges, false, COLOR_SHADING);
+        }
+        else if ('mesh' in node) {
             node.mesh.render(glcanvas.gl, glcanvas.shaders, pMatrix, mvMatrix, glcanvas.ambientColor, glcanvas.light1Pos, glcanvas.light2Pos, glcanvas.lightColor, false, glcanvas.drawEdges, false, COLOR_SHADING);
         }
+
         if ('children' in node) {
             for (var i = 0; i < node.children.length; i++) {
                 glcanvas.repaintRecurse(node.children[i], pMatrix, mvMatrix);
@@ -408,11 +430,11 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.computeImageSources = function(order) {
         console.log("Computing image sources of order " + order);
         glcanvas.scene.computeImageSources(order);
-        ////
-        glcanvas.imSourcesDrawer.reset();
-        for (var i = 1; i < glcanvas.scene.imsources.length; i++) {
-            glcanvas.imSourcesDrawer.drawPoint(glcanvas.scene.imsources[i].pos, vec3.fromValues(1, 0, 1));
-        }
+        //// 
+        //// glcanvas.imSourcesDrawer.reset();
+        //// for (var i = 1; i < glcanvas.scene.imsources.length; i++) {
+        ////     glcanvas.imSourcesDrawer.drawPoint(glcanvas.scene.imsources[i].pos, vec3.fromValues(1, 0, 1));
+        //// }
 
         requestAnimFrame(glcanvas.repaint);
     }
@@ -434,7 +456,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
                 glcanvas.drawer.drawLine(path[j].pos, path[j].dir, vec3.fromValues(1, 1, 0));
             }
         }
-        repaintBBox(scene);//// 
+        if ('bbox' in scene) repaintBBox(scene);//// 
         requestAnimFrame(glcanvas.repaint);
     }
 
@@ -502,7 +524,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.shaders = initShaders(glcanvas.gl, shadersRelPath);
     
     glcanvas.drawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);//Simple drawer object for debugging
-    glcanvas.imSourcesDrawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);//// An alternative way of rendering image sources 
+    //// glcanvas.imSourcesDrawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);//// An alternative way of rendering image sources 
     glcanvas.pathDrawer = new SimpleDrawer(glcanvas.gl, glcanvas.shaders);//For drawing reflection paths
     
     glcanvas.gl.clearColor(0.0, 0.0, 0.0, 1.0);
