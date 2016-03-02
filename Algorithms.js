@@ -303,6 +303,16 @@ function addImageSourcesFunctions(scene) {
         }
     }
 
+    //helper calculate attenuation
+    function attenuate(p,dis){
+        return 1/((1+dis)^p);
+    }
+    //helper find nearest bin
+    function findNear(num){
+        var ceil = Math.ceil(num);
+        if ((ceil-num)<=0.5) return ceil;
+        else return Math.floor(num);
+    }
     
     //Purpose: Based on the extracted image sources, trace back paths from the
     //receiver to the source, checking to make sure there are no occlusions
@@ -372,6 +382,7 @@ function addImageSourcesFunctions(scene) {
         }
     }
     
+
     
     //Inputs: Fs: Sampling rate (samples per second)
     scene.computeImpulseResponse = function(Fs) {
@@ -385,5 +396,36 @@ function addImageSourcesFunctions(scene) {
         //those directions).  Use some form of interpolation to spread an impulse
         //which doesn't fall directly in a bin to nearby bins
         //Save the result into the array scene.impulseResp[]
+
+        scene.impulses = [];
+        var time_max = 0;
+        loop:
+        for (var f = 0; f < scene.paths.length; f++) { // for each path
+            var p = 0.8;
+            var path = scene.paths[f];
+            var rec = path[0];
+            var src = path[path.length-1];
+            var locDis = Math.sqrt(vec3.squaredDistance(rec,path[1]));
+            var totalDis = locDis;
+            var atten = 1;
+            atten *= attenuate(p,locDis);
+            for (var j = 1; j < path.length-1; j++) { // for each bounces, specially handle first and last segments
+                if (j==path.length-2){
+                    locDis = Math.sqrt(vec3.squaredDistance(path[j],src));
+                }
+                else locDis = Math.sqrt(vec3.squaredDistance(path[j].pos,path[j+1].pos));
+                totalDis+=locDis;
+                atten *= path[j].rcoeff*attenuate(p,locDis);
+            }
+            var time = totalDis/SVel;
+            scene.impulses.push({time:time,atten:atten})
+            if (time>time_max) time_max=time;
+
+        }
+        scene.impulseResp=new Float32Array(time_max*Fs);
+        for (var i=0;i<scene.impulses.length;i++){
+            var ind = findNear(scene.impulses[i].time*Fs);
+            scene.impulseResp[ind] += scene.impulses[i].atten;    
+        }
     }
 }
