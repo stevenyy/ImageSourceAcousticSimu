@@ -1,0 +1,108 @@
+{
+    "name":"testscene",
+    "receiver":[5, 1.5, 0],
+    "source":[-5, 1.5, 0],
+    "children":[
+        {
+            "transform":[12, 0, 0, 0,
+                         0, 10, 0, 0,
+                         0, 0, 10, 0,
+                         0, 0, 0, 1],
+            "children":[
+                {
+                    "mesh":"meshes/1573.off",
+                    "omesh":"meshes/15733.off",
+                    "color":[1, 1, 1],
+                    "rcoeff":0.5,
+                    "transform":[0.3, 0, 0, 0,
+                                 0, 0.3, 0, 0,
+                                 0, 0, 0.3, 0,
+                                 0, 0, 0, 1]
+                },
+                {
+                    "mesh":"meshes/box.off",
+                    "color":[1, 1, 1],
+                    "rcoeff":0.5,
+                    "transform":[0.1, 0, -0.1, 0,
+                                 0, 0.02, 0, -0.41,
+                                 -0.1, 0, -0.1, 0,
+                                 0, 0, 0, 1],  
+                    "children":[
+                        { 
+                        "mesh":"meshes/box.off",
+                        "color":[1, 1, 1],
+                        "rcoeff":0.5,
+                        "transform":[0.1, 0, 0, 0.4,
+                                     0, 4, 0, -2.5,
+                                     0, 0, 0.1, 0.4,
+                                     0, 0, 0, 1]     
+                        },
+                        { 
+                        "mesh":"meshes/box.off",
+                        "color":[1, 1, 1],
+                        "rcoeff":0.5,
+                        "transform":[0.1, 0, 0, 0.4,
+                                     0, 4, 0, -2.5,
+                                     0, 0, 0.1, -0.4,
+                                     0, 0, 0, 1]      
+                        },
+                        { 
+                        "mesh":"meshes/box.off",
+                        "color":[1, 1, 1],
+                        "rcoeff":0.5,
+                        "transform":[0.1, 0, 0, -0.4,
+                                     0, 4, 0, -2.5,
+                                     0, 0, 0.1, 0.4,
+                                     0, 0, 0, 1]     
+                        },
+                        { 
+                        "mesh":"meshes/box.off",
+                        "color":[1, 1, 1],
+                        "rcoeff":0.5,
+                        "transform":[0.1, 0, 0, -0.4,
+                                     0, 4, 0, -2.5,
+                                     0, 0, 0.1, -0.4,
+                                     0, 0, 0, 1]     
+                        }
+                    ]
+                },
+                {
+                "mesh":"meshes/square.off",
+                "color":[0.6, 0.1, 0.2],
+                "rcoeff":0.5,
+                "transform":[1, 0, 0, 0,
+                             0, 1, 0, -0.5,
+                             0, 0, 1, 0,
+                             0, 0, 0, 1]     
+                },
+                {
+                "mesh":"meshes/square.off",
+                "color":[0.6, 0.1, 1],
+                "rcoeff":0.5,
+                "transform":[0, 1, 0, -0.5,
+                             1, 0, 0, 0,
+                             0, 0, 1, 0,
+                             0, 0, 0, 1]     
+                },
+                {
+                "mesh":"meshes/square.off",
+                "color":[0.6, 0.1, 1],
+                "rcoeff":0.5,
+                "transform":[0, 1, 0, 0.5,
+                             1, 0, 0, 0,
+                             0, 0, 1, 0,
+                             0, 0, 0, 1]     
+                },
+                {
+                "mesh":"meshes/square.off",
+                "color":[0.6, 0.1, 1],
+                "rcoeff":0.5,
+                "transform":[1, 0, 0, 0,
+                             0, 0, 1, 0,
+                             0, 1, 0, -0.5,
+                             0, 0, 0, 1]     
+                }
+            ]
+        }
+    ]
+}

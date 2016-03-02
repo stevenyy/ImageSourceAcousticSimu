@@ -172,15 +172,17 @@ function addImageSourcesFunctions(scene) {
         }
 
         //// check bounding box
-        var intxn = null;
-        for (var b = 0; b < node.bbox.length; b++) {
-            intxn = rayIntersectPolygon(P0, V, node.bbox[b], mat4.create());
-            if (!(intxn === null)) {
-                break;
+        if ('bbox' in node) {
+            var intxn = null;
+            for (var b = 0; b < node.bbox.length; b++) {
+                intxn = rayIntersectPolygon(P0, V, node.bbox[b], mat4.create());
+                if (!(intxn === null)) {
+                    break;
+                }
             }
-        }
-        if (intxn === null) {
-            return null;
+            if (intxn === null) {
+                return null;
+            }
         }
 
         if ('mesh' in node) { //Make sure it's not just a dummy transformation node
@@ -329,10 +331,17 @@ function addImageSourcesFunctions(scene) {
     //part of the path, which will be used to compute decays in "computeInpulseResponse()"
     //Don't forget the direct path from source to receiver!
     scene.extractPaths = function() {
-        //// Log: strangely, I can't compute bboxes right after adding scene funcrions.
-        //// It turns out mesh.faces are empty after parseNode() and even after everything's set up.
-        if (!('bbox' in scene)) {
-            computeBBoxes(scene, mat4.create());
+        var enableBBox = true;//// change to false for testing execution time
+        var begin = (new Date()).getTime();
+        var text = "s to extract paths without using bounding boxes";
+        if (enableBBox) {           
+            text = "s to extract paths with existing bounding boxes";
+            if (!('bbox' in scene)) {
+                text = "s to compute bounding boxes and extract paths";
+                computeBBoxes(scene, mat4.create());
+                //// Log: strangely, I can't compute bboxes right after adding scene funcrions.
+                //// mesh.faces is empty after parseNode() and even after everything's set up.
+            }
         }
         scene.paths = [];
         
@@ -380,6 +389,8 @@ function addImageSourcesFunctions(scene) {
                 scene.paths.push(path);
             }
         }
+        var end = (new Date()).getTime();
+        console.log((end-begin)/1000.0 + text);
     }
     
 
