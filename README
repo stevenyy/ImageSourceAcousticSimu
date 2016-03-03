@@ -1,0 +1,13 @@
+TEAM MEMBER:
+Shenghan Chen, Jincheng Xu, Siyang Wang
+
+Q1: Approximately how many hours it took you to finish this assignment:
+2.5hours (pls add your time on top of this)
+
+Q2: Your overall impression of the assignment. Did you love it, hate it, or were you neutral? One word answers are fine, but if you have any suggestions for the future let me know.
+I really loved it, this assignment has helped me understand many concept that I overlooked during the lecture. I think it is very comprehensive -- the line intersecting face, using recursion/loop to find images of sources, and use of scene graph, transformation to world coordinate, sounds and impulse response handling -- it contains many interesting facets, which otherwise we would not be able to appreciate and comprehend completely had we not do this assignment. Also, this is one of the project cool to show around since it is very presentable. The fact that we can use web GUI and inspect element to test is very helpful, as it provides Integrated Development Enviornment usually not seen in scripting/loosely bounded language coding. 
+
+Q3: Any other concerns that you have. For instance, if you have a bug that you were unable to solve but you made progress, write that here:
+
+Core Techniques
+
