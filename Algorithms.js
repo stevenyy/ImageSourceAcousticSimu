@@ -324,7 +324,7 @@ function addImageSourcesFunctions(scene) {
         scene.pathsR = [];
         var leftEar = vec3.create();
         var rightEar = vec3.create();
-        var earWidth = 10;
+        var earWidth = 5;
         vec3.scaleAndAdd(leftEar,scene.receiver.pos,scene.receiver.right,-earWidth);
         vec3.scaleAndAdd(rightEar,scene.receiver.pos,scene.receiver.right,earWidth);
 
