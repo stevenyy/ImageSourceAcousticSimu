@@ -1,0 +1,17 @@
+{
+
+    "name":"testscene",
+    "receiver":[-30, 3, 0],
+    "source":[30, 3, 0], 
+    "children":[
+        { 
+            "mesh":"meshes/sphere.off",
+            "color":[0.0, 0.5, 0.0],
+            "rcoeff":0.9,
+            "transform":[50, 0, 0, 0,
+                         0, 40, 0, 3,
+                         0, 0, 40, 0,
+                         0, 0, 0, 1]
+        }
+            ]
+}
