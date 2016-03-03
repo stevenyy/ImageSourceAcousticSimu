@@ -321,7 +321,7 @@ function addImageSourcesFunctions(scene) {
     //part of the path, which will be used to compute decays in "computeInpulseResponse()"
     //Don't forget the direct path from source to receiver!
     scene.extractPaths = function() {
-        var enableBBox = true;//// change to false for testing execution time
+        var enableBBox = false;//// change to false for testing execution time
         var begin = (new Date()).getTime();
         var text = "s to extract paths without using bounding boxes";
         if (enableBBox) {           
@@ -399,31 +399,113 @@ function addImageSourcesFunctions(scene) {
     }
 }
 
-function buildCity() {
-    var dimension = 1000;
-    var smin = 3; //streetWidthMin
-    var smax = 5; //streetWidthMax
-    var bmin = 20; //buildingSizeMin
-    var bmax = 50; //buildingSizeMax
 
-    var buildings = [];
-    var streets = [];
+function buildCityA(scene) {
+    var m = 1; //scale factor
+    var d = 1000; //city floor dimension
+    var smin = 20; //street width min
+    var smax = 25; //street width max
+    var bmin = 30; //building size min
+    var bmax = 50; //building size max
+    var hmin = 100; //building height min
+    var hmax = 250; //building height max
 
-    var x = dimension;
-    while (x >= bmax+bmin+smax) {
-        // var n = Math.floor((Math.random() * 3) + 3);
+    var bx = [];
+    var sx = [];
+    var dx = d;
+    while (dx > 0) {
         var b = Math.floor((Math.random() * (bmax-bmin+1)) + bmin);
         var s = Math.floor((Math.random() * (smax-smin+1)) + smin);
-        buildings.push(b);
-        streets.push(s);
-        x -= b+s;
-    }
-    if (x < bmax) {
-        buildings.push(x);
-    }
-    else {
-        var b = Math.floor((Math.random() * (x-2*smin+1)) + smin);
-        streets.push(b);
+        if (dx < b+s) {
+            if (dx < bmin) {
+                break;
+            }
+            else if (dx < b) {
+                b = dx;
+            }
+            s = dx-b;
+        }
+        bx.push(b);
+        sx.push(s); 
+        dx -= b+s;
     }
 
+    var by = [];
+    var sy = [];
+    var dy = d;
+    while (dy > 0) {
+        var b = Math.floor((Math.random() * (bmax-bmin+1)) + bmin);
+        var s = Math.floor((Math.random() * (smax-smin+1)) + smin);
+        if (dy < b+s) {
+            if (dy < bmin) {
+                break;
+            }
+            else if (dy < b) {
+                b = dy;
+            }
+            s = dy-b;
+        }
+        by.push(b);
+        sy.push(s); 
+        dy -= b+s;
+    }
+
+    var children = [{mesh:"meshes/square.off",
+                    color:[1, 1, 1],
+                    rcoeff:0.5,
+                    transform:[ d, 0, 0, 0,
+                                0, 1, 0, 0,
+                                0, 0, d, 0,
+                                0, 0, 0, 1]}];
+    var x = -d/2;
+    for (var i = 0; i < bx.length; i++) {
+        var y = -d/2;
+        x += bx[i];
+        for (var j = 0; j < by.length; j++) {
+            y += by[j];
+            var h = Math.floor((Math.random() * (hmax-hmin+1)) + hmin);
+            console.log(bx[i] + " by " + by[j] + " building centered at (" + (x-bx[i]/2) + ", " + (y-by[j]/2) + ")");
+            children.push({ mesh:"meshes/box.off",
+                            color:[Math.random(), Math.random(), Math.random()],
+                            rcoeff:0.5,
+                            transform:[ bx[i], 0, 0, x-bx[i]/2,
+                                        0, h, 0, h/2,
+                                        0, 0, by[j], y-by[j]/2,
+                                        0, 0, 0, 1]});
+            y += sy[j];
+        }
+        x += sx[i];
+    }
+
+    var rcvx = -d/2;
+    var rcvy = -d/2;
+    var rx = Math.floor(Math.random() * bx.length);
+    for (var k = 0; k <= rx; k++) {
+        rcvx += bx[k] + sx[k];
+    }
+    rcvx -= sx[rx]/2;
+    var ry = Math.floor(Math.random() * by.length);
+    for (var k = 0; k <= ry; k++) {
+        rcvy += by[k] + sy[k];
+    }
+    rcvy -= sy[ry]/2;
+
+    var srcx = -d/2;
+    var srcy = -d/2;
+    var lx = Math.floor(Math.random() * bx.length);
+    for (var k = 0; k <= lx; k++) {
+        srcx += bx[k] + sx[k];
+    }
+    srcx -= sx[lx]/2;
+    var ly = Math.floor(Math.random() * by.length);
+    for (var k = 0; k <= ly; k++) {
+        srcy += by[k] + sy[k];
+    }
+    srcy -= sy[ly]/2;
+
+    var parent = {children:children, transform:[m, 0, 0, 0,
+                                                0, m, 0, -hmax*m,
+                                                0, 0, m, 0,
+                                                0, 0, 0, 1]};
+    return {children: [parent], receiver: [rcvx*m, 1.5-hmax*m, rcvy*m], source: [srcx*m, 1.5-hmax*m, srcy*m]};
 }

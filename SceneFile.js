@@ -128,6 +128,12 @@ function loadSceneFromFile(filename, glcanvas) {
 }
 
 //// 
+function buildCitySF(glcanvas) {
+        glcanvas.scene = buildCityA();
+        setupScene(glcanvas.scene, glcanvas);
+}
+
+//// 
 function repaintBBox(node) {
     for (var i = 0; i < node.bbox.lines.length; i++) {
         glcanvas.drawer.drawLine(node.bbox.lines[i][0], node.bbox.lines[i][1], vec3.fromValues(0, 1, 1));
@@ -248,7 +254,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
         glcanvas.gl.clear(glcanvas.gl.COLOR_BUFFER_BIT | glcanvas.gl.DEPTH_BUFFER_BIT);
         
         var pMatrix = mat4.create();
-        mat4.perspective(pMatrix, 45, glcanvas.gl.viewportWidth / glcanvas.gl.viewportHeight, 0.01, 100.0);
+        mat4.perspective(pMatrix, 45, glcanvas.gl.viewportWidth / glcanvas.gl.viewportHeight, 0.01, 1000.0);
         //First get the global modelview matrix based on the camera
         var mvMatrix = glcanvas.camera.getMVMatrix();
         //Then drawn the scene
@@ -442,6 +448,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.extractPaths = function() {
         console.log("Extracting paths source to receiver");
         glcanvas.scene.extractPaths();
+        console.log(glcanvas.scene.paths.length + " paths extracted");
         //Fill in buffers for path drawer
         glcanvas.pathDrawer.reset();
         glcanvas.drawer.reset();

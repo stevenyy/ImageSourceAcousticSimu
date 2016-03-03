@@ -44,6 +44,7 @@
 
 <h3>Scene</h3>
 <table>
+<tr><td><button type="button" id = "cityButton" onclick="callBuildCity()">Build City!</button></td></tr>
 <tr><td>Scene File</td><td><input type = "file" id = "sceneInput"></td></tr>
 </table>
 
@@ -154,6 +155,11 @@
         requestAnimFrame(glcanvas.repaint);
     });
     displayDebuggingFeaturesCheckbox.checked = true;
+
+    //// call build city
+    function callBuildCity() {
+        buildCitySF(glcanvas);
+    }
 
     function callViewFromSource() {
         glcanvas.viewFromSource();
