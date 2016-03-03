@@ -236,6 +236,7 @@ function addImageSourcesFunctions(scene) {
     
     //Inputs: order (int) : The maximum number of bounces to take
     scene.computeImageSources = function(order) {
+        console.log("debug: order is passed: " + order);
         scene.source.order = 0;//Store an order field to figure out how many 
         //bounces a particular image represents
         scene.source.rcoeff = 1.0;//Keep track of the reflection coefficient of the node that
@@ -305,6 +306,112 @@ function addImageSourcesFunctions(scene) {
         }
     }
     
+    scene.extractPathsBinaural = function() {
+        console.log("extracting binaural paths");
+        var enableBBox = true;//// change to false for testing execution time
+        var begin = (new Date()).getTime();
+        var text = "s to extract paths without using bounding boxes";
+        if (enableBBox) {           
+            text = "s to extract paths with existing bounding boxes";
+            if (!('bbox' in scene)) {
+                text = "s to compute bounding boxes and extract paths";
+                computeBBoxes(scene, mat4.create());
+                //// Log: strangely, I can't compute bboxes right after adding scene funcrions.
+                //// mesh.faces is empty after parseNode() and even after everything's set up.
+            }
+        }
+        scene.pathsL = [];
+        scene.pathsR = [];
+        var leftEar = vec3.create();
+        var rightEar = vec3.create();
+        var earWidth = 10;
+        vec3.scaleAndAdd(leftEar,scene.receiver.pos,scene.receiver.right,-earWidth);
+        vec3.scaleAndAdd(rightEar,scene.receiver.pos,scene.receiver.right,earWidth);
+
+        //left
+        loop:
+        for (var i = 0; i < scene.imsources.length; i++) {
+            var path = [{pos:leftEar,dummy:null}];//debug
+            var src = scene.imsources[i];
+            var order = src.order;
+            var base = leftEar; //debug
+            var ray = vec3.create();
+            vec3.subtract(ray, src.pos, base);
+            var excludeFace = null;
+            for (var g = 0; g < order; g++) {
+                var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
+                if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
+                    //// continue if image on its genFace (tmin == 1)
+                    // transFlag = 1 when transmission is on
+                    continue loop;   
+                }
+                base = intxn.PMin;
+
+                //// debugging feature
+                var normal = vec3.clone(src.genFace.normal);
+                vec3.scale(normal, normal, vec3.dot(normal, ray));
+                vec3.normalize(normal, normal);
+                vec3.scale(normal, normal, 0.3);
+                var head = vec3.create();
+                vec3.subtract(head, base, normal);
+
+                path.push({pos:base, rcoeff:src.rcoeff, dir:head});
+                excludeFace = src.genFace;
+                src = src.parent;
+                vec3.subtract(ray, src.pos, base);
+            }
+            intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
+            if (intxn === null || intxn.tmin >= 1) {
+                //// OK if source on a face (tmin == 1)
+                path.push(src);
+                scene.pathsL.push(path);
+            }
+        }
+
+        //right
+        loop:
+        for (var i = 0; i < scene.imsources.length; i++) {
+            var path = [{pos:rightEar, dummy:null}];//debug
+            var src = scene.imsources[i];
+            var order = src.order;
+            var base = rightEar; //debug
+            var ray = vec3.create();
+            vec3.subtract(ray, src.pos, base);
+            var excludeFace = null;
+            for (var g = 0; g < order; g++) {
+                var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
+                if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
+                    //// continue if image on its genFace (tmin == 1)
+                    // transFlag = 1 when transmission is on
+                    continue loop;   
+                }
+                base = intxn.PMin;
+
+                //// debugging feature
+                var normal = vec3.clone(src.genFace.normal);
+                vec3.scale(normal, normal, vec3.dot(normal, ray));
+                vec3.normalize(normal, normal);
+                vec3.scale(normal, normal, 0.3);
+                var head = vec3.create();
+                vec3.subtract(head, base, normal);
+
+                path.push({pos:base, rcoeff:src.rcoeff, dir:head});
+                excludeFace = src.genFace;
+                src = src.parent;
+                vec3.subtract(ray, src.pos, base);
+            }
+            intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
+            if (intxn === null || intxn.tmin >= 1) {
+                //// OK if source on a face (tmin == 1)
+                path.push(src);
+                scene.pathsR.push(path);
+            }
+        }
+
+        var end = (new Date()).getTime();
+        console.log((end-begin)/1000.0 + text);
+    }
+
     //Purpose: Based on the extracted image sources, trace back paths from the
     //receiver to the source, checking to make sure there are no occlusions
     //along the way.  Remember, you're always starting by tracing a path from
@@ -319,7 +426,8 @@ function addImageSourcesFunctions(scene) {
     //as an element "rcoeff" which stores the reflection coefficient at that
     //part of the path, which will be used to compute decays in "computeInpulseResponse()"
     //Don't forget the direct path from source to receiver!
-    scene.extractPaths = function() {
+    scene.extractPaths = function(flag) {
+        console.log("extracting path with flag: " + flag);
         var enableBBox = true;//// change to false for testing execution time
         var begin = (new Date()).getTime();
         var text = "s to extract paths without using bounding boxes";
@@ -354,7 +462,8 @@ function addImageSourcesFunctions(scene) {
                 var intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
                 if (intxn === null || intxn.faceMin != src.genFace || intxn.tmin >= 1) {
                     //// continue if image on its genFace (tmin == 1)
-                    continue loop;
+                    // transFlag = 1 when transmission is on
+                    if (flag==0) continue loop;   
                 }
                 base = intxn.PMin;
 
@@ -382,8 +491,78 @@ function addImageSourcesFunctions(scene) {
         console.log((end-begin)/1000.0 + text);
     }
     
+    //Binaural sound
+    scene.computeImpulseResponseBinaural = function(Fs) {
+        var SVel = 340;//Sound travels at 340 meters/second
 
-    
+        scene.impulsesL = [];
+        scene.impulsesR = [];
+        var time_maxL = 0;
+        var time_maxR = 0;
+        var p = 0.8;
+        //left
+        loop:
+        for (var f = 0; f < scene.pathsL.length; f++) { // for each path
+            var path = scene.pathsL[f];
+            var rec = path[0];
+            var src = path[path.length-1];
+            var locDis = Math.sqrt(vec3.squaredDistance(rec.pos, path[1].pos));
+            var totalDis = locDis;
+            var atten = 1;
+            atten *= attenuate(p,locDis);
+            for (var j = 1; j < path.length-1; j++) { // for each bounces, specially handle first and last segments
+                if (j==path.length-2){
+                    locDis = Math.sqrt(vec3.squaredDistance(path[j].pos,src.pos));
+                }
+                else locDis = Math.sqrt(vec3.squaredDistance(path[j].pos,path[j+1].pos));
+                totalDis+=locDis;
+                atten *= path[j].rcoeff*attenuate(p,locDis);
+            }
+            var time = totalDis/SVel;
+            // console.log("Time is: "+time);
+            scene.impulsesL.push({time:time,atten:atten})
+            if (time>time_maxL) time_maxL=time;
+
+        }
+        
+        scene.impulseRespL=new Float32Array(Math.ceil(time_maxL*Fs)); 
+        for (var i=0;i<scene.impulsesL.length;i++){
+            var ind = findNear(scene.impulsesL[i].time*Fs);
+            scene.impulseRespL[ind] += scene.impulsesL[i].atten;    
+        }
+
+        //right
+        loop:
+        for (var f = 0; f < scene.pathsR.length; f++) { // for each path
+            var path = scene.pathsR[f];
+            var rec = path[0];
+            var src = path[path.length-1];
+            var locDis = Math.sqrt(vec3.squaredDistance(rec.pos, path[1].pos));
+            var totalDis = locDis;
+            var atten = 1;
+            atten *= attenuate(p,locDis);
+            for (var j = 1; j < path.length-1; j++) { // for each bounces, specially handle first and last segments
+                if (j==path.length-2){
+                    locDis = Math.sqrt(vec3.squaredDistance(path[j].pos,src.pos));
+                }
+                else locDis = Math.sqrt(vec3.squaredDistance(path[j].pos,path[j+1].pos));
+                totalDis+=locDis;
+                atten *= path[j].rcoeff*attenuate(p,locDis);
+            }
+            var time = totalDis/SVel;
+            // console.log("Time is: "+time);
+            scene.impulsesR.push({time:time,atten:atten})
+            if (time>time_maxR) time_maxR=time;
+
+        }
+        
+        scene.impulseRespR=new Float32Array(Math.ceil(time_maxR*Fs)); 
+        for (var i=0;i<scene.impulsesR.length;i++){
+            var ind = findNear(scene.impulsesR[i].time*Fs);
+            scene.impulseRespR[ind] += scene.impulsesR[i].atten;    
+        }
+    }
+
     //Inputs: Fs: Sampling rate (samples per second)
     scene.computeImpulseResponse = function(Fs) {
         var SVel = 340;//Sound travels at 340 meters/second
@@ -423,14 +602,12 @@ function addImageSourcesFunctions(scene) {
             if (time>time_max) time_max=time;
 
         }
-        // console.log("maxtime is "+time_max);
+        
         scene.impulseResp=new Float32Array(Math.ceil(time_max*Fs)); 
-        // console.log("Constructing impulseResp array... : "+scene.impulseResp.length);
         for (var i=0;i<scene.impulses.length;i++){
             var ind = findNear(scene.impulses[i].time*Fs);
             scene.impulseResp[ind] += scene.impulses[i].atten;    
         }
-        // console.log("the size of array right after construction: "+scene.impulseResp.length);
     }
 
     //helper calculate attenuation

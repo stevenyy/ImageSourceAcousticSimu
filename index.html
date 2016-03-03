@@ -36,8 +36,11 @@
 
 <table><tr><td>
 <canvas id="GLCanvas1" style="border: none;" width="800" height="600"></canvas>
-<center><h3>Impulse Response</h3></center>
+<center><h3>Single Impulse Response or Left-ear Binaural Impulse Resp</h3></center>
 <div id="impulsePlot"></div>
+
+<center><h3>Right-ear Binaural Impulse Response</h3></center>
+<div id="impulsePlotRight"></div>
 
 </td>
 <td>
@@ -72,7 +75,10 @@
 <table>
 <tr><td><button type="button" id = "sourcesButton" onclick="callComputeImageSources()">Compute Image Sources</button> of order <input type="text" id="sourceorder" size="1"></input></td></tr>
 <tr><td><button type="button" id = "pathsButton" onclick="callExtractPaths()">Extract Paths Source To Receiver</button></td></tr>
+<tr><td><button type="button" id = "pathsButtonTransmission" onclick="callExtractPathsTransmission()">Extract Paths Source To Receiver With Transmission</button></td></tr>
+<tr><td><button type="button" id = "pathsButtonBinaural" onclick="callExtractPathsBinaural()">Extract Paths Source To Receiver in Binaural Mode</button></td></tr>
 <tr><td><button type="button" id = "sourceButton" onclick="callComputeImpulseResponse()">Compute Impulse Response</button></td></tr>
+<tr><td><button type="button" id = "binaural" onclick="callComputeImpulseResponseBinaural()">Compute Binaural Impulse Response</button></td></tr>
 </table>
 
 <h3>Audio Playback</h3>
@@ -176,11 +182,26 @@
         glcanvas.computeImageSources(order);
     }
     function callExtractPaths() {
-        glcanvas.extractPaths();
+        var flag = 0;
+        glcanvas.extractPaths(flag);
     }
+
+    function callExtractPathsTransmission() {
+        alert("transmission not fully done!")
+    }
+
+    function callExtractPathsBinaural() {
+        glcanvas.extractPathsBinaural();
+    }
+
     function callComputeImpulseResponse() {
         glcanvas.computeImpulseResponse();
     }
+
+    function callComputeImpulseResponseBinaural() {
+        glcanvas.computeImpulseResponseBinaural();
+    }
+
     ///////////////////////////////////////////
     //             Audio stuff               //
     ///////////////////////////////////////////

@@ -444,10 +444,44 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
 
         requestAnimFrame(glcanvas.repaint);
     }
+
+    glcanvas.extractPathsBinaural = function() {
+        console.log("Extracting binaural paths source to receiver");
+        glcanvas.scene.extractPathsBinaural();
+        console.log((glcanvas.scene.pathsL.length+glcanvas.scene.pathsR.length) + " paths extracted");
+        //Fill in buffers for path drawer
+        glcanvas.pathDrawer.reset();
+        glcanvas.drawer.reset();
+        for (var i = 0; i < glcanvas.scene.pathsL.length; i++) {
+            var path = glcanvas.scene.pathsL[i];
+            for (var j = 0; j < path.length-1; j++) {
+                //Draw all of the paths as a sequence of red line segments
+                glcanvas.pathDrawer.drawLine(path[j].pos, path[j+1].pos, vec3.fromValues(1, 0, 0));
+                //// Draw all intersection points found along each path as dots
+                if (j == 0) continue;
+                // glcanvas.drawer.drawPoint(path[j].pos, vec3.fromValues(1, 1, 0));
+                glcanvas.drawer.drawLine(path[j].pos, path[j].dir, vec3.fromValues(1, 1, 0));
+            }
+        }
+
+        for (var i = 0; i < glcanvas.scene.pathsR.length; i++) {
+            var path = glcanvas.scene.pathsR[i];
+            for (var j = 0; j < path.length-1; j++) {
+                //Draw all of the paths as a sequence of red line segments
+                glcanvas.pathDrawer.drawLine(path[j].pos, path[j+1].pos, vec3.fromValues(1, 0, 0));
+                //// Draw all intersection points found along each path as dots
+                if (j == 0) continue;
+                // glcanvas.drawer.drawPoint(path[j].pos, vec3.fromValues(1, 1, 0));
+                glcanvas.drawer.drawLine(path[j].pos, path[j].dir, vec3.fromValues(1, 1, 0));
+            }
+        }
+        if ('bbox' in scene) repaintBBox(scene);//// 
+        requestAnimFrame(glcanvas.repaint);
+    }
     
-    glcanvas.extractPaths = function() {
+    glcanvas.extractPaths = function(flag) {
         console.log("Extracting paths source to receiver");
-        glcanvas.scene.extractPaths();
+        glcanvas.scene.extractPaths(flag);
         console.log(glcanvas.scene.paths.length + " paths extracted");
         //Fill in buffers for path drawer
         glcanvas.pathDrawer.reset();
@@ -497,6 +531,54 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
         requestAnimFrame(glcanvas.repaint);
     }
 
+    glcanvas.computeImpulseResponseBinaural = function() {
+        console.log("Computing Binaural impulse response");
+        //Step 1: Call student code
+        glcanvas.scene.computeImpulseResponseBinaural(globalFs);
+        if (scene.impulseRespL.length == 0 && scene.impulseRespR.length == 0) {
+               return; //Student hasn't filled in yet.  Exit gracefully
+        }
+        
+        //Step 2: Plot the leftear impulse response as a stem plot with milliseconds on the x-axis
+        //and magnitude on the y-axis
+        console.log("impulseRespL.length = " + scene.impulseRespL.length);
+        data = [];
+        for (var i = 0; i < scene.impulseRespL.length; i++) {
+            var gamma = scene.impulseRespL[i];
+            if (gamma > 0) {
+                data.push({x:[1000*i/globalFs, 1000*i/globalFs], y:[0, gamma], mode:'lines+markers'});
+            }
+        }
+        Plotly.newPlot('impulsePlot', data, {xaxis:{title:'Time (Milliseconds)'}, yaxis:{title:'Magnitude'}});
+
+        console.log("impulseRespR.length = " + scene.impulseRespR.length);
+        data = [];
+        for (var i = 0; i < scene.impulseRespR.length; i++) {
+            var gamma = scene.impulseRespR[i];
+            if (gamma > 0) {
+                data.push({x:[1000*i/globalFs, 1000*i/globalFs], y:[0, gamma], mode:'lines+markers'});
+            }
+        }
+        Plotly.newPlot('impulsePlotRight', data, {xaxis:{title:'Time (Milliseconds)'}, yaxis:{title:'Magnitude'}});
+        
+        //Step 3: Create a new audio buffer and copy over the data
+        //https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createBuffer
+        var N = Math.max(scene.impulseRespL.length, scene.impulseRespR.length);
+        impbuffer = context.createBuffer(2, N, globalFs); //Create stereo audio
+
+        //Copy over impulse response from left ear into left channel
+        var impsamplesL = impbuffer.getChannelData(0);
+        for (var i = 0; i < scene.impulseRespL.length; i++) {
+            impsamplesL[i] = scene.impulseRespL[i];
+        }
+
+        //Copy over impulse response from left ear into right channel
+        var impsamplesR = impbuffer.getChannelData(1);
+        for (var i = 0; i < scene.impulseRespR.length; i++) {
+            impsamplesR[i] = scene.impulseRespR[i];
+        }
+        requestAnimFrame(glcanvas.repaint);
+    }
 
 
     /////////////////////////////////////////////////////
