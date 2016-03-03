@@ -448,9 +448,9 @@ function addImageSourcesFunctions(scene) {
 
 function buildCityA(scene) {
     var m = 1; //scale factor
-    var d = 1000; //city floor dimension
-    var smin = 20; //street width min
-    var smax = 25; //street width max
+    var d = 500; //city floor dimension
+    var smin = 45; //street width min
+    var smax = 75; //street width max
     var bmin = 30; //building size min
     var bmax = 50; //building size max
     var hmin = 100; //building height min
@@ -525,29 +525,35 @@ function buildCityA(scene) {
 
     var rcvx = -d/2;
     var rcvy = -d/2;
-    var rx = Math.floor(Math.random() * bx.length);
+    var rx = Math.floor(Math.random() * (bx.length-1));
     for (var k = 0; k <= rx; k++) {
         rcvx += bx[k] + sx[k];
     }
+    var srcx = rcvx + bx[rx+1] + sx[rx+1]/2;//// 
     rcvx -= sx[rx]/2;
-    var ry = Math.floor(Math.random() * by.length);
+
+    var ry = Math.floor(Math.random() * (by.length-1));
     for (var k = 0; k <= ry; k++) {
         rcvy += by[k] + sy[k];
     }
+    var srcy = rcvy + by[ry+1] + sy[ry+1]/2;//// 
     rcvy -= sy[ry]/2;
+    if (Math.random() < 0.5) {
+        srcy = rcvy;
+    }
 
-    var srcx = -d/2;
-    var srcy = -d/2;
-    var lx = Math.floor(Math.random() * bx.length);
-    for (var k = 0; k <= lx; k++) {
-        srcx += bx[k] + sx[k];
-    }
-    srcx -= sx[lx]/2;
-    var ly = Math.floor(Math.random() * by.length);
-    for (var k = 0; k <= ly; k++) {
-        srcy += by[k] + sy[k];
-    }
-    srcy -= sy[ly]/2;
+    // var srcx = rcvx + bx[rx+1] + sx[rx+1]/2;
+    // var srcy = -d/2;
+    // var lx = Math.floor(Math.random() * bx.length);
+    // for (var k = 0; k <= lx; k++) {
+    //     srcx += bx[k] + sx[k];
+    // }
+    // srcx -= sx[lx]/2;
+    // var ly = Math.floor(Math.random() * by.length);
+    // for (var k = 0; k <= ly; k++) {
+    //     srcy += by[k] + sy[k];
+    // }
+    // srcy -= sy[ly]/2;
 
     var parent = {children:children, transform:[m, 0, 0, 0,
                                                 0, m, 0, -hmax*m,
