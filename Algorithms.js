@@ -320,7 +320,7 @@ function addImageSourcesFunctions(scene) {
     //part of the path, which will be used to compute decays in "computeInpulseResponse()"
     //Don't forget the direct path from source to receiver!
     scene.extractPaths = function() {
-        var enableBBox = false;//// change to false for testing execution time
+        var enableBBox = true;//// change to false for testing execution time
         var begin = (new Date()).getTime();
         var text = "s to extract paths without using bounding boxes";
         if (enableBBox) {           
@@ -372,8 +372,8 @@ function addImageSourcesFunctions(scene) {
                 vec3.subtract(ray, src.pos, base);
             }
             intxn = scene.rayIntersectFaces(base, ray, scene, mat4.create(), excludeFace);
-            if (intxn === null || intxn.tmin > 1) {
-                //// continue if source on a face (tmin == 1)
+            if (intxn === null || intxn.tmin >= 1) {
+                //// OK if source on a face (tmin == 1)
                 path.push(src);
                 scene.paths.push(path);
             }
