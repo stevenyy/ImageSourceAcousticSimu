@@ -217,7 +217,7 @@ function SceneCanvas(glcanvas, shadersRelPath, pixWidth, pixHeight, scene) {
     glcanvas.scene.receiver.pixHeight = pixHeight;
     glcanvas.externalCam = new FPSCamera(pixWidth, pixHeight, 0.75);
     glcanvas.externalCam.pos = vec3.fromValues(0, 1.5, 0);
-    glcanvas.walkspeed = 25;//How many meters per second
+    glcanvas.walkspeed = 2.5;//How many meters per second
     glcanvas.lastTime = (new Date()).getTime();
     glcanvas.movelr = 0;//Moving left/right
     glcanvas.movefb = 0;//Moving forward/backward
